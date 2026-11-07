@@ -1,4 +1,4 @@
-# Plantty
+# Forget Me Nots
 
 A responsive household plant-care prototype inspired by Sheikh Elias’s [AI Plant Care Mobile App](https://dribbble.com/shots/27550819-AI-Plant-Care-Mobile-App). Built with HTML, CSS and JavaScript, with no installation or API keys needed.
 

@@ -11,4 +11,4 @@ http.createServer(async (req,res) => {
     const body = await readFile(file);
     res.writeHead(200,{'Content-Type':types[path.extname(file)] || 'application/octet-stream'}).end(body);
   } catch { res.writeHead(404).end('Not found'); }
-}).listen(5173,'127.0.0.1',()=>console.log('Plantty is ready at http://127.0.0.1:5173'));
+}).listen(5173,'127.0.0.1',()=>console.log('Forget Me Nots is ready at http://127.0.0.1:5173'));
