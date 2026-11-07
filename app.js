@@ -1,0 +1,65 @@
+const $ = (s) => document.querySelector(s);
+const day = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+const today = day();
+const photos = {
+ 'Monstera deliciosa':'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=600&q=85',
+ 'Snake plant':'https://images.unsplash.com/photo-1593482892290-f54927ae1bb6?auto=format&fit=crop&w=600&q=85',
+ 'Golden pothos':'https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=600&q=85',
+ 'Peace lily':'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=600&q=85'
+};
+const future = n => {const d=new Date();d.setDate(d.getDate()+Number(n));return day(d)};
+const defaults = [
+ {id:'monty',name:'Monstera',species:'Monstera deliciosa',room:'Living room',interval:7,next:today},
+ {id:'snake',name:'Snake plant',species:'Snake plant',room:'Bedroom',interval:14,next:future(6)},
+ {id:'pothos',name:'Golden pothos',species:'Golden pothos',room:'Living room',interval:7,next:today},
+ {id:'lily',name:'Peace lily',species:'Peace lily',room:'Kitchen',interval:7,next:future(3)}
+];
+let plants=defaults.map(p=>({...p}));
+try { const saved=JSON.parse(localStorage.getItem('plantty-plants')); if(Array.isArray(saved)&&saved.every(p=>p&&typeof p.id==='string'&&typeof p.name==='string'&&photos[p.species]&&['Living room','Bedroom','Kitchen'].includes(p.room)&&Number(p.interval)>0&&/^\d{4}-\d{2}-\d{2}$/.test(p.next))) plants=saved; } catch {}
+let room='All plants', currentView='home', factIndex=0, photoURL, analyzing=false;
+const facts=[
+ 'Many plants follow a daily rhythm, adjusting their leaves and growth as daylight comes and goes.',
+ 'Those beautiful splits in mature Monstera leaves are called fenestrations. Younger leaves often grow without them.',
+ 'Plants grow toward light through a process called phototropism. Rotate your pot occasionally for more even growth.',
+ 'A golden pothos can grow as a climbing vine. A support pole gives its aerial roots something to hold onto.',
+ 'Dusty leaves catch less light. A gentle wipe with a damp cloth helps your leafy roommates make the most of the sunshine.'
+];
+const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const due=p=>p.next<=day();
+const dateLabel=p=>due(p)?'Water today':new Date(p.next+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});
+function save(){try{localStorage.setItem('plantty-plants',JSON.stringify(plants))}catch{toast('Storage is full. Changes will last for this session.')}}
+let toastTimer;
+function toast(message){$('#toast').textContent=message;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3500)}
+function water(id){const p=plants.find(p=>p.id===id);if(!p)return;p.next=future(p.interval);p.lastWatered=day();save();render();toast(`${p.name} is watered. Next drink in ${p.interval} days.`)}
+function render(){
+ const thirsty=plants.filter(due);
+ $('#nav-count').textContent=plants.length;$('#plant-count').textContent=`${plants.length} plants`;$('#due-count').textContent=`${thirsty.length} plants`;$('#collection-count').textContent=String(plants.length).padStart(2,'0');$('#task-count').textContent=thirsty.length;
+ const visible=plants.filter(p=>room==='All plants'||p.room===room);
+ $('#plant-grid').innerHTML=visible.map(p=>`<button class="plant-card" data-detail="${escapeHTML(p.id)}"><div class="plant-photo"><img src="${photos[p.species]}" alt="${escapeHTML(p.species)}" loading="lazy"><span class="plant-tag">${escapeHTML(p.room)}</span></div><div class="plant-info"><div class="plant-title"><h3>${escapeHTML(p.name)}</h3><span>↗</span></div><p>${escapeHTML(p.species)}</p><div class="plant-bottom"><span>● In your household</span><span class="water-badge ${due(p)?'':'good'}">${dateLabel(p)}</span></div></div></button>`).join('')||'<p class="empty">A little room for something green. Add your first plant.</p>';
+ $('#care-list').innerHTML=thirsty.map(p=>`<div class="care-task"><img class="task-image" src="${photos[p.species]}" alt=""><div class="task-copy"><strong>${escapeHTML(p.name)}</strong><small>Water · ${escapeHTML(p.room)}</small></div><button class="water-button" data-water="${escapeHTML(p.id)}" aria-label="Mark ${escapeHTML(p.name)} as watered">✓</button></div>`).join('')||'<p class="empty">All caught up. Enjoy your little jungle.</p>';
+ const done=plants.filter(p=>p.lastWatered===day()).length,total=done+thirsty.length;
+ $('#care-progress').innerHTML=`${done} of ${total} watering tasks completed<div class="progress-track"><span style="width:${total?done/total*100:100}%"></span></div>`;
+ $('#schedule-list').innerHTML=[...plants].sort((a,b)=>a.next.localeCompare(b.next)).map(p=>`<div class="schedule-row"><img src="${photos[p.species]}" alt="${escapeHTML(p.species)}"><div><h3>${escapeHTML(p.name)}</h3><p>${escapeHTML(p.room)} · Every ${p.interval} days · ${dateLabel(p)}</p></div><button class="primary" data-water="${escapeHTML(p.id)}">Mark watered ✓</button></div>`).join('')||'<p class="empty">Add a plant to start your care schedule.</p>';
+}
+function view(name){currentView=name;$('#home-view').hidden=!['home','plants'].includes(name);$('#scan-view').hidden=name!=='scan';$('#schedule-view').hidden=name!=='care';$('.hero').hidden=name==='plants';$('.summary').hidden=name==='plants';$('#home-view .page-heading h1').innerHTML=name==='plants'?'Your leafy roommates<span>.</span>':'A little care. A lot of growth<span>.</span>';$('#page-label').textContent=({home:'Overview',plants:'My plants',care:'Care schedule',scan:'Plant check'})[name];document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===name));window.scrollTo({top:0,behavior:'instant'})}
+function add(){ $('#add-form').reset();$('#next-water').value=today;$('#add-dialog').showModal();$('#plant-name').focus() }
+function detail(id){const p=plants.find(p=>p.id===id);if(!p)return;$('#detail-content').innerHTML=`<div class="section-heading"><h2>${escapeHTML(p.name)}</h2><button class="icon-button" data-close aria-label="Close">×</button></div><img class="detail-photo" src="${photos[p.species]}" alt="${escapeHTML(p.species)}"><p class="muted">${escapeHTML(p.species)} · ${escapeHTML(p.room)}</p><h3>A little care goes a long way.</h3><p class="muted">Watering reminder: every ${p.interval} days.<br>Next watering: ${dateLabel(p)}.<br>Check the soil first; the right timing depends on your home.</p><div class="detail-actions"><button class="primary" data-water="${escapeHTML(p.id)}">Mark watered ✓</button><button class="danger" data-remove="${escapeHTML(p.id)}">Remove plant</button></div>`;$('#detail-dialog').showModal()}
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.view)view(b.dataset.view);if(b.hasAttribute('data-add'))add();if(b.hasAttribute('data-scan'))view('scan');if(b.hasAttribute('data-all'))view('plants');if(b.hasAttribute('data-close'))b.closest('dialog').close();if(b.dataset.water){water(b.dataset.water);if($('#detail-dialog').open)$('#detail-dialog').close()}if(b.dataset.detail)detail(b.dataset.detail);if(b.dataset.room){room=b.dataset.room;document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('active',x===b));render()}if(b.dataset.remove){plants=plants.filter(p=>p.id!==b.dataset.remove);save();render();$('#detail-dialog').close();toast('Plant removed from your household.')}});
+$('#add-form').addEventListener('submit',e=>{e.preventDefault();const f=new FormData(e.target);const name=f.get('name').trim();if(!name){$('#plant-name').setCustomValidity('Please enter a plant nickname.');$('#plant-name').reportValidity();return}plants.push({id:crypto.randomUUID(),name,species:f.get('species'),room:f.get('room'),interval:Number(f.get('interval')),next:f.get('next')});save();room='All plants';document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('active',x.dataset.room===room));render();$('#add-dialog').close();toast(`${name} has a new home.`)});
+$('#plant-name').addEventListener('input',()=>$('#plant-name').setCustomValidity(''));
+$('#reminder-button').addEventListener('click',()=>view('care'));
+$('#next-fact').addEventListener('click',()=>{factIndex=(factIndex+1)%facts.length;$('#fact-text').textContent=facts[factIndex]});
+$('#plant-photo').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;if(!file.type.startsWith('image/')||file.size>10*1024*1024){toast('Please choose an image smaller than 10 MB.');e.target.value='';return}if(photoURL)URL.revokeObjectURL(photoURL);photoURL=URL.createObjectURL(file);$('#photo-preview').src=photoURL;$('#photo-preview').hidden=false;$('#analyze').disabled=false;$('#analyze').textContent='Check plant status';$('#assessment').innerHTML='<span class="pill">DEMO PLANT CHECK</span><h2>Ready for a closer look.</h2><p>Your photo stays on this device. Tap “Check plant status” to view a sample assessment.</p>'});
+$('#analyze').addEventListener('click',()=>{if(!photoURL||analyzing)return;analyzing=true;$('#analyze').disabled=true;$('#analyze').textContent='Checking your plant…';setTimeout(()=>{const condition=['Looks happy','Could use a little attention','Time for a soil check'][Math.floor(Math.random()*3)];$('#assessment').innerHTML=`<span class="pill">MOCK ASSESSMENT · NOT PHOTO ANALYSIS</span><h2>${condition}.</h2><p>Sample identification: <strong>Monstera deliciosa</strong></p><p>This is a randomly selected demo result. It does not describe or identify the plant in your photo.</p><ul class="result-list"><li>Feel the top few centimetres of soil before watering.</li><li>Give it bright, indirect light.</li><li>Check under the leaves for pests or damage.</li></ul><button class="primary" data-add>Add a plant to my household ↗</button>`;analyzing=false;$('#analyze').disabled=false;$('#analyze').textContent='Check again'},900)});
+document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close()}}));
+$('#today').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}).toUpperCase();$('#fact-text').textContent=facts[0];render();
+const onboardingSteps=[
+ {eyebrow:'A HOME FOR YOUR GREEN THINGS',title:'Less guesswork.<br>More <em>growing.</em>',description:'Meet your new little plant companion. A calmer way to care for every leaf in your home.',button:'Let’s put down roots'},
+ {eyebrow:'A LITTLE CLOSER TO EVERY LEAF',title:'Every leaf has<br>a <em>story.</em>',description:'Add your household plants, give them a name, and try a photo check with a sample health assessment.',button:'There’s room to grow'},
+ {eyebrow:'SMALL MOMENTS. HAPPY PLANTS.',title:'Find your<br>green <em>rhythm.</em>',description:'Keep watering on your radar and discover something new along the way. Your little jungle is waiting.',button:'Meet my little jungle'}
+];
+let onboardStep=0;
+function showOnboardStep(){const s=onboardingSteps[onboardStep];$('#onboard-words').innerHTML=`<p class="onboard-eyebrow">${s.eyebrow}</p><h2>${s.title}</h2><p class="onboard-description">${s.description}</p>`;$('#onboard-words').classList.remove('onboard-enter');void $('#onboard-words').offsetWidth;$('#onboard-words').classList.add('onboard-enter');$('#onboard-next').innerHTML=`${s.button} <span>↗</span>`;$('#onboard-back').hidden=onboardStep===0;$('#art-number').textContent=String(onboardStep+1).padStart(2,'0');$('#step-counter').textContent=`0${onboardStep+1} — 03`;$('#step-indicator').setAttribute('aria-label',`Step ${onboardStep+1} of 3`);document.querySelectorAll('#step-indicator span').forEach((x,i)=>x.classList.toggle('selected',i===onboardStep))}
+function finishOnboarding(){try{localStorage.setItem('plantty-onboarded','true')}catch{}$('#onboarding').classList.add('leaving');setTimeout(()=>{$('#onboarding').hidden=true;document.body.classList.remove('onboarding-open');$('.shell').inert=false;$('.sidebar').inert=false;$('[data-add]').focus()},matchMedia('(prefers-reduced-motion: reduce)').matches?0:650)}
+$('#onboard-next').addEventListener('click',()=>{if(onboardStep<2){onboardStep++;showOnboardStep()}else finishOnboarding()});$('#onboard-back').addEventListener('click',()=>{onboardStep=Math.max(0,onboardStep-1);showOnboardStep()});$('#skip-onboarding').addEventListener('click',finishOnboarding);
+let onboarded=false;try{onboarded=localStorage.getItem('plantty-onboarded')==='true'}catch{}if(!onboarded){$('#onboarding').hidden=false;document.body.classList.add('onboarding-open');$('.shell').inert=true;$('.sidebar').inert=true;$('#onboard-next').focus()}
