@@ -8,3 +8,4 @@
 
 .markers{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.marker{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font:inherit;font-size:12px;color:#54713a;cursor:pointer}.marker.due{background:#fff4d6;border-color:#e8c766;color:#7a5a00}
 #care-list{max-height:515px;overflow-y:auto;scrollbar-width:thin;padding-right:6px}
+.sidebar{overflow-y:auto}.profile{flex-shrink:0}@media(max-height:780px){.sidebar-note{display:none}.profile{margin-top:auto}}
