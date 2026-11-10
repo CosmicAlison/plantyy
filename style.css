@@ -192,8 +192,6 @@ input[aria-invalid="true"]{border-color:#b9604f}
  .nav-plants{display:none}
  .sidebar nav{grid-template-columns:repeat(4,1fr)}
  .nav{font-size:11px}
- .nav-scan span{background:var(--green);color:#fff;border-radius:50%;width:34px;height:34px;display:grid;place-items:center;font-size:20px;margin-top:-14px;box-shadow:0 3px 8px #314d1e55}
- .nav-scan{padding-top:0}
  .tiles{grid-template-columns:1fr}
  .detail-actions .danger{margin-left:0}
  .day-strip{gap:4px}
