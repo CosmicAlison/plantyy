@@ -1,1 +1,1 @@
-{"name":"forget-me-nots","version":"1.0.0","private":true,"type":"module","scripts":{"dev":"node server.js","start":"node server.js","check":"node --check app.js && node --check server.js"}}
+{"name":"forget-me-nots","version":"1.0.0","private":true,"type":"module","scripts":{"dev":"node server.js","start":"node server.js","check":"node --check flower.js && node --check app.js && node --check features.js && node --check server.js && node --check api/scan.js && node --check api/chat.js && node --check lib/claude.js"}}

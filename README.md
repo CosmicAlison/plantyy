@@ -10,7 +10,7 @@ Requires Node.js 18 or newer.
 npm start
 ```
 
-Open http://127.0.0.1:5173. Run `npm run check` for JavaScript syntax checks.
+Open http://127.0.0.1:5173. To use the real AI scan and plant guide, copy your key into a `.env` file (`ANTHROPIC_API_KEY=...`, optional `ANTHROPIC_MODEL`) before starting. AI calls only run when `AI_FEATURES=on` is also set (they are Premium features and cost money, so they are off by default; Basic uses Google search links). Without a key both features fall back to clearly labelled sample results. The routes live in `api/` (Vercel serverless functions) and are also served by `server.js` locally. Run `npm run check` for JavaScript syntax checks.
 
 ## Features
 
